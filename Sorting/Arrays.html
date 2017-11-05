@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<head>
+<title>Learn Assembly</title>
+<link rel="stylesheet" type="text/css" href="../styles.css" />
+</head>
+<body>
+
+<h1>Arrays</h1>
+
+<h2>A Review Of How Arrays Work</h2>
+
+
+<div class="centerText">
+<p>When we were writing to memory in our print subroutines we were working with arrays. 
+We were working with an array of bytes, and since bytes are the smallest unit of memory available, 
+incrementing the offset into our array by one would give us the next element in our array.</p>
+</div>
+
+<!-- could add picture -->
+
+<div class="centerText">
+<p>When we work with other types of arrays we will have to adjust the way we index into the array based on how big each element in the array is.</p>
+</div>
+
+<div class="centerText">
+<p>To illustrate this, let's take a look at this C statement:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+int x = arr[2];
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>
+There are a couple of things going on here -
+<br>
+1. the offset into the array you provide will be multiplied by four to give you the address at the 8th byte
+<br>
+2. four bytes will be read at that address
+<br>
+3. the resulting value will be placed in a register or somewhere on the stack
+<br>
+So when we do this in assembly we will do something like:
+</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+mov rcx, 2
+mov eax, dword [arr + rcx*4]
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>If you're new to this concept it's worth noting that if we knew we wanted only the 3rd element in the array we could also do this:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+mov rsi, arr
+mov eax, dword [rsi + 8]
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>It's just that we often don't know at compile time which element we want, or we are looping through the whole array. 
+So it is easier to just use a register as a conceptual offset and then multiply that value by the size of the data type we're working with. 
+If we had a few different arrays we might want to access, putting the address of the array in a register like I did here would be useful.
+<br>
+C provides a similar abstraction when we add to an address:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+// assume we defined an array called arr earlier
+int* arrBegin = arr;
+++arrBegin;
+printf("%d\n", arrBegin[0]);
+// same as: printf("%d\n", *arrBegin);
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>This will print out the second element in arr because C is smart enough to know the size of a pointer on the system it's compiling code for. 
+If the compiler took your instructions literally and added one to the address, you would end up reading the wrong sequence of bytes 
+and you would get a junk value when you read from your array.<br>So we actually have yet another way to fetch an element from in array in assembly:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+mov rsi, arr
+add rsi, 4 ; "inc rsi" would give us the wrong value
+mov eax, dword [rsi] ; no offset necessary
+</pre>
+</code>
+</div>
+
+<h2>Initializing The Array</h2>
+
+<div class="centerText">
+<p>In order to test our sorting subroutines we'll want to initialize our arrays like we would in C:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+int arr[10] = {4, 5, 2, 8, 20, 1, 34, 12, 19, 28};
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>Data inititialized at compile time goes in the .data section. The inititialized list will look like this:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .data
+arr: dd 4, 5, 2, 8, 20, 1, 34, 12, 19, 28
+</pre>
+</code>
+</div>
+
+
+<div class="centerText">
+<p>"arr" is our reference to the address of this array, and "dd" means each element that we initialize the array with will be a dword. 
+We don't need to specify the size of the array because it's implied by the number of elements we provide.</p>
+</div>
+
+
+<footer class="linkLeft"><a href="../index.html">Home</a></footer>
+<footer class="linkRight"><a href="bubbleSort.html">Bubble Sort</a></footer>
+
+</body>

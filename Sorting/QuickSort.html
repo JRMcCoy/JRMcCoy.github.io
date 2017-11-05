@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<head>
+<title>Learn Assembly</title>
+<link rel="stylesheet" type="text/css" href="../styles.css" />
+</head>
+<body>
+
+<h1>Quick Sort</h1>
+
+<h2>Kid</h2>
+<div class="centerText">
+<p>Yo man</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .data
+
+array: dd 4, 1, 8, 9, 2, 99, 200, 32, 6, 50
+
+section .text
+
+; rdi - dword array
+; rsi - low index
+; rdx - high index
+Sort:
+  push rbp
+  mov rbp, rsp
+
+  cmp rdx, rsi
+  jle qSortComplete
+
+  push rsi
+  push rdx
+  call partition
+  push rax
+
+  mov rsi, qword [rsp + 16]
+  mov rdx, rax
+  sub rdx, 1
+  call Sort
+
+  pop rsi
+  add rsi, 1
+  pop rdx
+  call Sort
+  
+  add rsp, 8
+
+  qSortComplete:
+    mov rsp, rbp
+    pop rbp
+    ret
+  
+
+  partition:
+
+    cmp rsi, rdx
+    jl comparePivot
+    mov rax, rdx
+    ret
+
+    comparePivot:
+      mov eax, dword [rdi + rdx*4]
+      cmp eax, dword [rdi + rsi*4]
+      jl movePivot
+
+      add rsi, 1
+      jmp partition
+
+    movePivot:
+      mov rbx, rdx
+      sub rbx, 1
+      cmp rbx, rsi
+      je finishSwap
+      mov ecx, eax
+      mov eax, dword [rdi + rbx*4]
+      mov dword [rdi + rbx*4], ecx
+
+      finishSwap:
+        mov ecx, dword [rdi + rsi*4]
+        mov dword [rdi + rdx*4], ecx
+        mov dword [rdi + rsi*4], eax
+        sub rdx, 1
+        jmp partition
+
+
+global _start
+_start:
+  
+  mov rdi, array
+  mov rsi, 0
+  mov rdx, 9
+  call Sort
+
+  mov r8, 0
+  push r8
+
+  displayLoop:
+    mov r8, qword [rsp]
+    cmp r8, 36
+    jge exit
+    mov edi, dword [array + r8]
+    call Print_Unsigned
+    add qword [rsp], 4
+    jmp displayLoop
+
+  exit:
+    mov rax, 60
+    mov rdi, 0
+    syscall
+    
+
+
+
+</pre>
+</code>
+</div>
+
+<footer class="linkLeft"><a href="bubbleSort.html">Bubble Sort</a></footer>
+
+</body>

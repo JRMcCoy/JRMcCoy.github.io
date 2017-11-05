@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<head>
+<title>Learn Assembly</title>
+<link rel="stylesheet" type="text/css" href="../styles.css" />
+</head>
+<body>
+
+<h1>Bubble Sort</h1>
+
+<h2>Setting Things Up</h2>
+
+<div class="centerText">
+<p>This is pretty straigt forward, we initialize an array of random numbers as well as an array to test against after calling our subroutine.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .data
+
+arr: dd 30, 23, 24, 7, 19, 22, 3, 13, 19, 16
+
+expectedResult: dd 3, 7, 13, 16, 19, 19, 22, 23, 24, 30
+
+arrLen: equ 10 ; for our convenience, equate this symbol to 10
+
+</pre>
+</code>
+</div>
+
+<h2>The Algorithm</h2>
+
+<div class="centerText">
+<p>Here's the bubble sort subrouitine, structurally it doesn't look too different from the bubble sorts we've seen in langauges like C and Python.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .text
+
+; rdi - int list
+; rsi - length
+sort:
+  mov rcx, rsi
+  dec rcx
+  outer:
+    xor r8, r8
+    inner:
+      mov eax, dword [rdi + r8*4]
+      mov edx, dword [rdi + r8*4 + 4]
+      cmp edx, eax
+      jge next
+      ; swap
+        mov dword [rdi + r8*4], edx
+	    mov dword [rdi + r8*4 + 4], eax
+      next:
+	    inc r8
+	    cmp r8, rcx
+	    jl inner
+	loop outer
+  ret
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>Let's break it down a bit. The first thing I do is put the length arguement minus one (the amount of bubbles that will be done) in rcx.
+I do this so that I can use the <a href="http://x86.renejeschke.de/html/file_module_x86_id_161.html">loop</a> instruction.
+"loop label" equates to: "Is rcx zero? if yes decrement it and jmp to label. Otherwise fall through this statement."
+If I set it up this way I know that the code under the label I loop to will execute the amount of times I specify in rcx.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+mov rcx, rsi
+dec rcx
+outer:
+  ; code
+  ; code
+  ; code
+  loop outer ; this loop will execute rcx times
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>This not necessary and it's actually an inefficient instruction but I think it makes sense to use it in this algorithm.
+There are other cool things you can do using the counter register, but some of them are only availble in 32-bit mode.<br><br>
+Once the outer loop starts, I clear a register so I can use it both as an index into the array and a counter in the inner loop. The sorting happens in this section of the inner loop:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+inner:
+  mov eax, dword [rdi + r8*4] ; load arr[i]
+  mov edx, dword [rdi + r8*4 + 4] ; and arr[i + 1]
+  cmp edx, eax ; for comparison
+  jge next
+  ; swap
+    mov dword [rdi + r8*4], edx
+	mov dword [rdi + r8*4 + 4], eax
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>If arr[i + 1] is less than arr[i] I will swap the two by writing arr[i]'s value (stored in a register) to arr[i + 1]'s memory location and vice versa.
+If they are already in ascending order I skip to the end of the loop where I increment my inner counter and compare it to rcx.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+    next:
+      inc r8
+      cmp r8, rcx
+      jl inner
+  loop outer
+ret
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p></p>
+</div>
+
+<h2>Testing The Subroutine</h2>
+
+<div class="centerText">
+<p>We'll test the subroutine by comparing the values of the two arrays at each index and making sure they match. 
+If they don't match we'll jump out of the testing loop and return 1 to the OS. Run this code and make sure you get an exit code of 0 when you enter "echo $" into the terminal.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+global _start
+
+_start:
+
+  mov rdi, arr
+  mov rsi, arrLen
+  call sort
+  
+  xor r8, r8
+  
+  checkResult:
+    mov eax, dword [arr + r8*4]
+    cmp eax, dword [expectedResult + r8*4]
+    jne failure
+    inc r8
+    cmp r8, arrLen
+    jl checkResult
+	
+
+  success:
+    mov rdi, 0
+    mov rax, 60
+    syscall
+	
+  failure:
+    mov rdi, 1
+    mov rax, 60
+    syscall
+</pre>
+</code>
+</div>
+
+
+
+<footer class="linkLeft"><a href="Arrays.html">Arrays</a></footer>
+<footer class="linkRight"><a href="../NotAvailable.html">Quick Sort</a></footer>
+
+</body>
