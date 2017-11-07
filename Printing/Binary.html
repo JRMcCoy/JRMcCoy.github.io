@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<head>
+<title>Learn Assembly</title>
+<link rel="stylesheet" type="text/css" href="../styles.css" />
+</head>
+<body>
+
+<h1>Print Binary</h1>
+
+<div class="centerText">
+<p>Printing a binary value can be very useful when you're getting unexpected results and you want to 
+inspect the contents of a register or memory location. This subroutine will take a value that will be 
+converted into a binary string representation as its first argument and the number of bits to print 
+as its second argument. We won't deal with printing values greater than 2^64 yet. For now, if the second 
+argument is greater than 64 we assume the caller meant 64 bits and read whatever is in rdi.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+PrintBinary:
+
+  ; values for conditional moves
+  mov r10, '0'
+  mov r11, '1'
+  mov rax, 64
+
+  cmp rsi, 64
+  cmovg rsi, rax
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>The first couple lines load registers with values that will be used for 
+<a href="http://x86.renejeschke.de/html/file_module_x86_id_34.html">Conditional Moves</a>.
+Then we check to see if the second argument is greater than the max allowed, 64. If it's greater than 64 
+we overwrite the register holding the argument with the value 64.<br><br>
+Next we prepare for the main loop by copying the first argument into r8 and then adjusting rdi to point 
+to the location in the print buffer that will have our least significant bit. We will be working backward 
+from that location toward the beginning of the print buffer using the 
+<a href="http://x86.renejeschke.de/html/file_module_x86_id_306.html">stosb</a>  
+ instruction, so we set the direction flag with "std". Then we load rcx with the amount of bits to print, 
+ because we will be using the loop instruction to load the print buffer with the correct number of values.</p>
+</div>
+
+
+<div class="codeBox">
+<code>
+<pre class="code">
+  mov r8, rdi
+  lea rdi, [printBuffer + rsi - 1]
+  std
+  mov rcx, rsi
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>In our main loop we first shift the value in r8 to the right by one. If a set bit is shifted out the carry flag will be set, 
+otherwise it will be cleared. So We'll load rax with the character reperesentation of the bit that was shifted out so that we 
+can then use the stosb instruction to write it to the print buffer and decrement the address in the print buffer that rdi points to. 
+Once we're done loading the print buffer we call sys write with the number of bits to print in rdx.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+printBit:
+  shr r8, 1
+  cmovc rax, r11
+  cmovnc rax, r10
+  stosb
+loop printBit
+
+mov rax, 1
+mov rdi, 1
+mov rdx, rsi
+mov rsi, printBuffer
+syscall
+ret
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>Let's combine everything we have so far into one file.</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .bss
+printBuffer resb 64
+
+section .text
+
+PrintString:
+  mov rsi, rdi
+  cld
+  findEnd:
+    lodsb
+    test al, al
+    jnz findEnd
+
+	mov rdx, rsi	
+	sub rdx, rdi
+	dec rdx
+	
+	mov rsi, rdi
+    mov rax, 1
+    mov rdi, 1
+    syscall
+  ret
+
+  
+PrintCharacter:
+  mov byte [printBuffer], rdi
+  mov rax, 1
+  mov rdi, 1
+  mov rsi, printBuffer
+  mov rdx, 1
+  syscall
+  ret
+
+  
+PrintBinary:
+
+  ; values for conditional moves
+  mov r10, '0'
+  mov r11, '1'
+  mov rax, 64
+
+  cmp rsi, 64
+  cmovg rsi, rax
+  
+  mov r8, rdi
+  lea rdi, [printBuffer + rsi - 1]
+  std
+  mov rcx, rsi
+
+  printBit:
+    shr r8, 1
+    cmovc rax, r11
+    cmovnc rax, r10
+    stosb
+  loop printBit
+
+  mov rax, 1
+  mov rdi, 1
+  mov rdx, rsi
+  mov rsi, printBuffer
+  syscall
+  ret
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>To test our newest subroutine we could do something like the following:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+_start:
+  ; print the value four in represented with 8 bits.
+  mov rdi, 4
+  mov rsi, 8 
+  call PrintBinary
+  
+  ; print a new line for nicer display
+  mov rdi, 10
+  call PrintCharacter
+  
+  ; exit from program
+  mov rax, 60
+  xor rdi, rdi
+  syscall
+</pre>
+</code>
+</div>
+
+<footer class="linkLeft"><a href="String.html">String</a></footer>
+<footer class="linkRight"><a href="../NotAvailable.html">Hex</a></footer>
+
+</body>
