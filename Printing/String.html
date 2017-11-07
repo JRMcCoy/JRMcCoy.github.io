@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<head>
+<title>Learn Assembly</title>
+<link rel="stylesheet" type="text/css" href="../styles.css" />
+</head>
+<body>
+
+<h1>String Printing</h1>
+
+<div class="centerText">
+<p>Implementing subroutines for printing to the console isn't just a good eductional exercise. 
+It's also incredibly useful to have them around after you've developed them.
+As programming tasks become more complicated it will become harder and harder to verify correct results 
+and debug if printing subroutines aren't available.<br><br>
+First we'll write a subroutine to print a string. It will take the address of a null-terminated string 
+as an argument and print its contents to the console. The first thing it will do is determine the length of the string:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+PrintString:
+  mov rsi, rdi
+  cld
+  findEnd:
+    lodsb
+    test al, al
+    jnz findEnd
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>We'll find the end of the string by using the 
+<a href="http://x86.renejeschke.de/html/file_module_x86_id_160.html">lodsb</a> instruction. 
+This instruction will read a byte at the address specified in rsi and place it in al. 
+It will then increment or decrement rsi, depending on how the direction flag is set.
+In this case we clear the direction flag with the cld instruction, indicating that
+we want rsi to increment. Once we have the byte we're looking at in al we use the 
+<a href="http://x86.renejeschke.de/html/file_module_x86_id_315.html">test</a> instruction to 
+set the flags according to the contents of the register. The zero flag will be set when the byte 
+we loaded into al is null, so we will loop as long as it's not null.<br><br>
+The rest of the subroutine looks like this:</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+  mov rdx, rsi 
+  sub rdx, rdi
+  dec rdx
+  
+  mov rsi, rdi
+  mov rax, 1
+  mov rdi, 1
+  syscall
+ret
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>The write system call takes the amount of bytes as an argument, specified in rdx. Because rsi is a now a memory address 
+n (including null byte) bytes greater than rdi, we can get the number of bytes to write by copying rsi into rdx, subtracting 
+rdi from rdx, and subtracting one more to leave the null byte out of the count. We then load the appropriate registers for the 
+write system call and then return from the subroutine.<br><br>
+The complete PrintString subroutine is used like this:</p>
+</div>
+
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .data 
+string: db "This is a string", 0
+
+section .text
+
+PrintString:
+  mov rsi, rdi
+  cld
+  findEnd:
+    lodsb
+    test al, al
+    jnz findEnd
+
+	mov rdx, rsi	
+	sub rdx, rdi
+	dec rdx
+	
+	mov rsi, rdi
+    mov rax, 1
+    mov rdi, 1
+    syscall
+  ret
+  
+global _start
+
+_start:
+  mov rdi, string
+  call PrintString
+  
+  xor rdi, rdi
+  mov rax, 60
+  syscall
+</pre>
+</code>
+</div>
+
+<div class="centerText">
+<p>It's going to be useful to have a way to print a single character. For example it would be nice 
+to be be able to print a newline character by passing the number 10 as an argument to a function. 
+Using the PrintString function to print one character would require initializing a string of length 1 in the 
+.data section or inserting the newline character into the correct place in a character array. 
+Sometimes it's no problem but other times it can be a pain.<br><br>
+As you'll see the rest of our print subroutines will use a buffer for storing the string that we build up 
+as we process numeric input. Our PrintCharacter subroutine will use this buffer. 
+</p>
+</div>
+
+<div class="codeBox">
+<code>
+<pre class="code">
+section .bss
+printBuffer resb 64
+
+section .text
+
+PrintCharacter:
+  mov byte [printBuffer], rdi
+  mov rax, 1
+  mov rdi, 1
+  mov rsi, printBuffer
+  mov rdx, 1
+  syscall
+  ret
+</pre>
+</code>
+</div>
+
+<footer class="linkLeft"><a href="../index.html">Home</a></footer>
+<footer class="linkRight"><a href="Binary.html">Binary</a></footer>
+
+</body>
