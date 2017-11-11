@@ -127,7 +127,7 @@ printBuffer resb 64
 section .text
 
 PrintCharacter:
-  mov byte [printBuffer], rdi
+  mov byte [printBuffer], dil
   mov rax, 1
   mov rdi, 1
   mov rsi, printBuffer
